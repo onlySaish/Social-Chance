@@ -144,8 +144,11 @@ const userLogin = asyncHandler(async(req,res) => {
 const userLogout = asyncHandler(async(req,res) => {
     await User.findByIdAndUpdate(req.user._id,
         {
-            $set: {
-                refreshToken : undefined
+            // $set: {
+            //     refreshToken : undefined
+            // }
+            $unset: {           //Alternate method if above doesnt work
+                refreshToken: 1        //the values you wanted to delete -> unset the values to 1
             }
         },
         {
@@ -368,7 +371,7 @@ const getChannelDetails = asyncHandler(async(req,res) => {
                 },
                 isSubscribed: {                 //to check if current logged in user is subscribed to the channel and behaviour of subscribe button
                     $cond: {
-                        if: {$in: [req.user._id === "$channelSubscribers.subscriber"]},
+                        if: {$in: [req.user._id,"$channelSubscribers.subscriber"]},
                         then: true,
                         else: false
                     }
@@ -383,7 +386,8 @@ const getChannelDetails = asyncHandler(async(req,res) => {
                 avatar:1,
                 coverImage:1,
                 subscribedToCount:1,
-                subscribedToCount:1
+                subscribersCount:1,
+                isSubscribed:1
             }
         }
     ]);
@@ -394,18 +398,19 @@ const getChannelDetails = asyncHandler(async(req,res) => {
     .json(
         new ApiResponse(
             201,
-            channel,
+            channel[0],
             "Fetched Channel Details"
         )
     )
 
 })
 
-const getWatchHistory = asyncHandler(async(req,res) => {
+const getWatchHistory = asyncHandler(async(req,res) => {    
+    const userId = req.user._id;
     const user = await User.aggregate([
         {
             $match: {               //To get watch history for user logged in
-                _id: new mongoose.Schema.Types.ObjectId(req.user._id)
+                _id: new mongoose.Types.ObjectId(userId)
             }
         },
         {
