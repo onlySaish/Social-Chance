@@ -330,6 +330,76 @@ const updateCoverImage = asyncHandler(async(req,res) => {
     )
 })
 
+const getChannelDetails = asyncHandler(async(req,res) => {
+    const {username} = req.params
+
+    if(!username.trim()) {throw new ApiError(400, "Username not Found")};
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username : username.toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "channelSubscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "channelSubscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount : {
+                    $size: `$channelSubscribers`
+                },
+                subscribedToCount: {
+                    $size: `$channelSubscribedTo`
+                },
+                isSubscribed: {                 //to check if current logged in user is subscribed to the channel and behaviour of subscribe button
+                    $cond: {
+                        if: {$in: [req.user._id === "$channelSubscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project:{                         //Fields to show in channel homepage
+                fullName:1,
+                email:1,
+                username:1,
+                avatar:1,
+                coverImage:1,
+                subscribedToCount:1,
+                subscribedToCount:1
+            }
+        }
+    ]);
+    console.log(channel?.length)
+    if (!channel?.length) {throw new ApiError(404, "Channel Does Not Exists")};
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            201,
+            channel,
+            "Fetched Channel Details"
+        )
+    )
+
+})
+
 export {
     userRegister,
     userLogin,
@@ -339,5 +409,6 @@ export {
     getCurrentUserDetails,
     updateAccountDetails,
     updateAvatar,
-    updateCoverImage
+    updateCoverImage,
+    getChannelDetails
 };
