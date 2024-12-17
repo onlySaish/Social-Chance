@@ -4,6 +4,7 @@ import {asyncHandler} from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose";
 
 const compareTwoObjects = (obj1,obj2) => {
     let keys = Object.keys(obj1);
@@ -400,6 +401,60 @@ const getChannelDetails = asyncHandler(async(req,res) => {
 
 })
 
+const getWatchHistory = asyncHandler(async(req,res) => {
+    const user = await User.aggregate([
+        {
+            $match: {               //To get watch history for user logged in
+                _id: new mongoose.Schema.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [                    //Currently we are in video schema here, thats why subpipline is inserted here for owner for each video
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "videoOwner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        username: 1,
+                                        fullName: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$videoOwner"
+                            }
+                        }
+                    } 
+                ]
+            }
+        },
+    ])
+
+    res.status(200)
+    .json(
+        new ApiResponse(
+            201,
+            user[0].watchHistory,
+            "Watch History Fetched Successfully"
+        )
+    )
+
+})
+
 export {
     userRegister,
     userLogin,
@@ -410,5 +465,6 @@ export {
     updateAccountDetails,
     updateAvatar,
     updateCoverImage,
-    getChannelDetails
+    getChannelDetails,
+    getWatchHistory
 };
