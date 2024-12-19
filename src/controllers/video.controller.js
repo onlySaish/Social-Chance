@@ -125,23 +125,40 @@ const getAllVideos = asyncHandler(async(req,res) => {
                                         views: 1,
                                         isPublished: 1,
                                     }
-                                }
+                                },
+                                
                             ]
                         }
                     },
+                    {
+                        $addFields: {
+                            allvideos: "$channelVideos"
+                        }
 
+                    },
+                    {
+                        $project: {
+                            username: 1,
+                            fullName: 1,
+                            avatar: 1,
+                            allvideos : 1
+                        }
+                    }
                 ])
             
         if (!aggregate.length) {throw new ApiError(400,"Videos Not Available")}
         
-        // const total = await User.countDocuments(aggregate[0].channelVideos)
+        // const total = await User.countDocuments(aggregate[0].channelVideos),
+
+        // console.log(aggregate, aggregate[0].allvideos);
 
         res.status(200)
         .json(
             new ApiResponse(
                 201,
                 {
-                    videos : aggregate[0].channelVideos,
+                    owner : aggregate,
+                    videos : aggregate[0].allvideos,
                     pagination: {
                         currentPage : parseInt(page),
                         // totalVideos: total,
