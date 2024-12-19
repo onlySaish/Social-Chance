@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
+
 const compareTwoObjects = (obj1,obj2) => {
     let keys = Object.keys(obj1);
     for (let key of keys){
@@ -377,7 +378,7 @@ const getChannelDetails = asyncHandler(async(req,res) => {
                     }
                 }
             }
-        },
+        },  
         {
             $project:{                         //Fields to show in channel homepage
                 fullName:1,
