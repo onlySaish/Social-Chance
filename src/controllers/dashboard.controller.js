@@ -55,14 +55,16 @@ const getChannelStats = asyncHandler(async(req,res) => {
     ])
     // console.log(videoAggregate[0].channelVideos)
 
-    let totalViews = 0;
-    (videoAggregate[0].channelVideos).map((vid) => {
-        totalViews += vid.views;
-    })
-    // console.log(totalViews);
-
     const totalVideos = (videoAggregate[0].channelVideos).length;
     // console.log(totalVideos);
+
+    let totalViews = 0;
+    if (totalVideos != 0) {
+        (videoAggregate[0].channelVideos).map((vid) => {
+            totalViews += vid.views;
+        })
+    }
+    // console.log(totalViews);
 
     const subsAggregate = await User.aggregate([
         {
@@ -137,10 +139,13 @@ const getChannelStats = asyncHandler(async(req,res) => {
 
     let totalLikes = 0;
     let totalComments = 0;
-    (likesAggregate[0].channelVideos).map((val) => {
-        totalLikes += val.currVideoLikes;
-        totalComments += val.currVideoComments;
-    })
+    
+    if ((likesAggregate[0].channelVideos).length != 0){
+        (likesAggregate[0].channelVideos).map((val) => {
+            totalLikes += val.currVideoLikes;
+            totalComments += val.currVideoComments;
+        })
+    }
     // console.log(totalLikes,totalComments);
 
     let responseData = {
